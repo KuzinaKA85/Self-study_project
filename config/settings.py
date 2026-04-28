@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     "django_filters",
     "rest_framework",
     "rest_framework_simplejwt",
-    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -73,34 +72,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-# Определяем, что мы в тестовом режиме
-IS_TESTING = "test" in sys.argv or "pytest" in sys.argv or os.getenv("CI", "") == "true"
-
-if IS_TESTING:
-    # Тестовый режим — используем SQLite
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "test_db.sqlite3",
-        }
+# База данных PostgreSQL
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": os.getenv("DATABASE_NAME"),
+        "USER": os.getenv("DATABASE_USER"),
+        "PASSWORD": os.getenv("DATABASE_PASSWORD"),
+        "HOST": os.getenv("DATABASE_HOST"),
+        "PORT": os.getenv("DATABASE_PORT")
     }
-    SECRET_KEY = "django-insecure-test-key-for-ci"
-    DEBUG = True
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql_psycopg2",
-            "NAME": os.getenv("DATABASE_NAME"),
-            "USER": os.getenv("DATABASE_USER"),
-            "PASSWORD": os.getenv("DATABASE_PASSWORD"),
-            "HOST": os.getenv("DATABASE_HOST"),
-            "PORT": os.getenv("DATABASE_PORT")
-        }
-    }
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    DEBUG = os.getenv("DEBUG", "0") == "1"
+}
 
-
+# Валидация паролей
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -117,24 +101,23 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-LANGUAGE_CODE = "en-us"
-
-TIME_ZONE = "UTC"
-
+# Интернационализация
+LANGUAGE_CODE = "ru-ru"
+TIME_ZONE = "Europe/Moscow"
 USE_I18N = True
-
 USE_TZ = True
 
-MEDIA_URL = "/media/"
-
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
-AUTH_USER_MODEL = "users.User"
-
+# Статика и медиа
 STATIC_URL = "static/"
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
+# Пользовательская модель
+AUTH_USER_MODEL = "users.User"
+
+# DRF настройки
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
@@ -149,6 +132,7 @@ REST_FRAMEWORK = {
     ],
 }
 
+# JWT настройки
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -164,20 +148,6 @@ if CACHE_ENABLED:
         }
     }
 
-CELERY_BEAT_SCHEDULE = {
-    "deactivate_users": {
-        "task": "materials.tasks.deactivate_users",
-        "schedule": timedelta(minutes=1),
-    },
-}
-
-CELERY_TIMEZONE = TIME_ZONE
-CELERY_TASK_TRACK_STARTED = True
-CELERY_TASK_TIME_LIMIT = 30 * 60
-
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
