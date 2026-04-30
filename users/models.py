@@ -3,14 +3,10 @@ from django.db import models
 
 
 class User(AbstractUser):
-    """Модель пользователя с ролями: Администратор, Преподаватель, Студент"""
+    """Модель пользователя с ролями: Администратор, Преподаватель, Студент."""
 
     username = None
-    email = models.EmailField(
-        unique=True,
-        verbose_name="Email",
-        help_text="Укажите почту"
-    )
+    email = models.EmailField(unique=True, verbose_name="Email", help_text="Укажите почту")
 
     phone_number = models.CharField(
         max_length=15,
@@ -38,18 +34,12 @@ class User(AbstractUser):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
-    # Роли по заданию
     ROLE_CHOICES = [
         ("student", "Студент"),
         ("teacher", "Преподаватель"),
         ("admin", "Администратор"),
     ]
-    role = models.CharField(
-        max_length=10,
-        choices=ROLE_CHOICES,
-        default="student",
-        verbose_name="Роль"
-    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="student", verbose_name="Роль")
 
     objects = UserManager()
 
@@ -61,6 +51,8 @@ class User(AbstractUser):
         verbose_name_plural = "Пользователи"
 
     def __str__(self):
+        """Строковое представление пользователя."""
+
         return self.email
 
     # Вспомогательные свойства

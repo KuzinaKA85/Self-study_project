@@ -1,25 +1,31 @@
-from rest_framework import viewsets, generics, permissions
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from rest_framework import generics, permissions
 from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Course, Section, Lesson
-from .serializers import (
-    CourseSerializer, SectionSerializer, LessonSerializer
-)
+from .models import Course, Section, Lesson, TestAttempt
+from .serializers import CourseSerializer, SectionSerializer, LessonSerializer
 
-from materials.permissions import IsTeacher, IsOwner, IsOwnerOrAdmin, IsStudentOrReadOnly
+from users.permissions import IsTeacher, IsOwner, IsOwnerOrAdmin, IsStudentOrReadOnly
 
 
 class CourseViewSet(ModelViewSet):
-    """ViewSet-класс для курсов"""
+    """ViewSet-класс для курсов.
+    Эндпоинты:
+        GET /courses/ - список курсов
+        POST /courses/ - создание курса
+        GET /courses/{id}/ - детали курса
+        PUT /courses/{id}/ - обновление курса
+        DELETE /courses/{id}/ - удаление курса
+    """
 
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
     def get_permissions(self):
         """Назначение прав доступа в зависимости от действия."""
+
         if self.action == "create":
             return [permissions.IsAuthenticated(), IsTeacher()]
         elif self.action == "destroy":
@@ -30,16 +36,22 @@ class CourseViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         """При создании устанавливаем текущего пользователя как owner."""
+
         serializer.save(owner=self.request.user)
 
 
 class SectionListAPIView(generics.ListAPIView):
-    """Список разделов (с фильтрацией по курсу)."""
+    """Список разделов (с фильтрацией по курсу).
+    GET /sections/ - все разделы
+    GET /sections/?course={id}/ - разделы конкретного курса
+    """
 
     serializer_class = SectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Фильтрация разделов по параметру course в query string."""
+
         course_id = self.request.query_params.get("course")
         if course_id:
             return Section.objects.filter(course_id=course_id)
@@ -47,23 +59,39 @@ class SectionListAPIView(generics.ListAPIView):
 
 
 class SectionCreateAPIView(generics.CreateAPIView):
-    """Создание раздела (только для преподавателей)."""
+    """Создание раздела (только для преподавателей).
+    Эндпоинт:
+        POST /materials/sections/create/
+     Тело запроса:
+        {
+            "course": 1,
+            "title_section": "Название раздела",
+            "order": 1
+        }
+    """
 
     serializer_class = SectionSerializer
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def perform_create(self, serializer):
+        """Создаёт раздел с проверкой прав владельца курса."""
+
         course_id = self.request.data.get("course")
         course = get_object_or_404(Course, id=course_id)
 
         if course.owner != self.request.user and not self.request.user.is_admin_user:
             from rest_framework.exceptions import PermissionDenied
+
             raise PermissionDenied("Вы не являетесь владельцем этого курса")
 
         serializer.save(course=course)
 
+
 class SectionRetrieveAPIView(generics.RetrieveAPIView):
-    """Детальный просмотр раздела."""
+    """Детальный просмотр раздела.
+    Эндпоинт:
+        GET /materials/sections/{id}/
+    """
 
     serializer_class = SectionSerializer
     queryset = Section.objects.all()
@@ -71,32 +99,46 @@ class SectionRetrieveAPIView(generics.RetrieveAPIView):
 
 
 class SectionUpdateAPIView(generics.UpdateAPIView):
-    """Обновление раздела (владелец или администратор)."""
+    """Обновление раздела (владелец или администратор).
+    Эндпоинты:
+        PUT    /materials/sections/update/{id}/  - полное обновление
+        PATCH  /materials/sections/update/{id}/  - частичное обновление
+    """
 
     serializer_class = SectionSerializer
     queryset = Section.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
 
     def perform_update(self, serializer):
-        """Дополнительная логика при обновлении."""
+        """Выполняет обновление раздела с логированием действия."""
 
         print(f"Раздел {serializer.instance.id} обновлён пользователем {self.request.user}")
         serializer.save()
 
 
 class SectionDestroyAPIView(generics.DestroyAPIView):
-    """Удаление раздела (только для владельца курса или администратора)."""
+    """Удаление раздела (только для владельца курса или администратора).
+    Эндпоинт:
+        DELETE /materials/sections/delete/{id}/
+    """
+
     queryset = Section.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
 
 
 class LessonListAPIView(generics.ListAPIView):
-    """Список уроков (с фильтрацией по разделу)."""
+    """Список уроков (с фильтрацией по разделу).
+    Эндпоинты:
+        GET /materials/lessons/                 - все уроки
+        GET /materials/lessons/?section={id}/    - уроки конкретного раздела
+    """
 
     serializer_class = LessonSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Фильтрует уроки по параметру section из query string."""
+
         section_id = self.request.query_params.get("section")
         if section_id:
             return Lesson.objects.filter(section_id=section_id)
@@ -104,7 +146,10 @@ class LessonListAPIView(generics.ListAPIView):
 
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
-    """Детальный просмотр урока."""
+    """Детальный просмотр урока.
+    Эндпоинт:
+        GET /materials/lessons/{id}/
+    """
 
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
@@ -112,24 +157,42 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
-    """Создание урока (только для преподавателей)."""
+    """Создание урока (только для преподавателей).
+    Эндпоинт:
+        POST /materials/lessons/create/
+    Тело запроса:
+        {
+            "section": 1,
+            "title_lesson": "Название урока",
+            "description": "Описание",
+            "video_url": "https://...",
+            "order": 1
+        }
+    """
 
     serializer_class = LessonSerializer
     permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def perform_create(self, serializer):
+        """Создаёт урок с проверкой прав владельца курса."""
+
         section_id = self.request.data.get("section")
         section = get_object_or_404(Section, id=section_id)
 
         if section.course.owner != self.request.user and not self.request.user.is_admin_user:
             from rest_framework.exceptions import PermissionDenied
+
             raise PermissionDenied("Вы не являетесь владельцем этого курса")
 
         serializer.save(owner=self.request.user, section=section)
 
 
 class LessonUpdateAPIView(generics.UpdateAPIView):
-    """Обновление урока (владелец или администратор)."""
+    """Обновление урока (владелец или администратор).
+    Эндпоинты:
+        PUT    /materials/lessons/update/{id}/  - полное обновление
+        PATCH  /materials/lessons/update/{id}/  - частичное обновление
+    """
 
     serializer_class = LessonSerializer
     queryset = Lesson.objects.all()
@@ -137,7 +200,53 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
 
 
 class LessonDestroyAPIView(generics.DestroyAPIView):
-    """Удаление урока (только владелец)."""
+    """Удаление урока.
+    Эндпоинт:
+        DELETE /materials/lessons/delete/{id}/
+    """
 
     queryset = Lesson.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsOwner]
+
+
+class CheckTestAPIView(APIView):
+    """
+    Проверка ответа на тест (отдельный запрос).
+    Эндпоинт:
+        POST /materials/check-test/
+        Тело запроса:
+        {
+            "lesson_id": 1,
+            "answer": "ответ студента"
+        }
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """Обрабатывает POST-запрос на проверку ответа."""
+
+        # Берем данные из запроса
+        lesson_id = request.data.get("lesson_id")
+        user_answer = request.data.get("answer", "").strip()
+
+        # Проверяем, существует ли урок
+        try:
+            lesson = Lesson.objects.get(id=lesson_id)
+        except Lesson.DoesNotExist:
+            return Response({"error": "Урок не найден"}, status=404)
+
+        # Проверяем, есть ли тест у урока
+        if not hasattr(lesson, "test"):
+            return Response({"error": "К уроку нет теста"}, status=404)
+
+        test = lesson.test
+
+        # Сравниваем ответы (без учёта регистра и пробелов)
+        is_correct = user_answer.lower() == test.correct_answer.strip().lower()
+
+        # Сохраняем попытку
+        TestAttempt.objects.create(student=request.user, test=test, user_answer=user_answer, is_correct=is_correct)
+
+        # Возвращаем результат
+        return Response({"correct": is_correct, "message": "Правильно!" if is_correct else "Неправильно"})

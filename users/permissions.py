@@ -3,8 +3,8 @@
 
 В соответствии с заданием:
 - Администратор: полный доступ
-- Преподаватель: управление своими курсами/уроками
-- Студент: только просмотр
+- Преподаватель: управление своими курсами/уроками, тестами
+- Студент: только просмотр материалов и прохождение тестов
 """
 
 from rest_framework import permissions
@@ -14,6 +14,8 @@ class IsAdmin(permissions.BasePermission):
     """Права только для администратора."""
 
     def has_permission(self, request, view):
+        """Проверка прав на уровне запроса."""
+
         return request.user.is_authenticated and request.user.is_admin_user
 
 
@@ -21,26 +23,33 @@ class IsTeacher(permissions.BasePermission):
     """Права только для преподавателя."""
 
     def has_permission(self, request, view):
+        """Проверка прав на уровне запроса."""
+
         return request.user.is_authenticated and request.user.is_teacher
 
 
 class IsOwner(permissions.BasePermission):
-    """Проверка, является ли пользователь владельцем объекта."""
+    """Проверка, является ли пользователь владельцем объекта (Course, Section, Lesson, Test, TestAttempt)."""
+
+    def _get_owner(self, obj):
+        """Рекурсивно получаем владельца объекта."""
+        if hasattr(obj, "owner"):
+            return obj.owner
+        if hasattr(obj, "course"):
+            return self._get_owner(obj.course)
+        if hasattr(obj, "section"):
+            return self._get_owner(obj.section)
+        if hasattr(obj, "lesson"):
+            return self._get_owner(obj.lesson)
+        if hasattr(obj, "test"):
+            return self._get_owner(obj.test)
+        return None
 
     def has_object_permission(self, request, view, obj):
-        user = request.user
+        """Проверка прав на уровне объекта."""
 
-        # Получаем владельца объекта
-        if hasattr(obj, "owner"):
-            owner = obj.owner
-        elif hasattr(obj, "course") and hasattr(obj.course, "owner"):
-            owner = obj.course.owner
-        elif hasattr(obj, "section") and hasattr(obj.section, "course"):
-            owner = obj.section.course.owner
-        else:
-            return False
-
-        return owner == user
+        owner = self._get_owner(obj)
+        return owner is not None and owner == request.user
 
 
 class IsOwnerOrAdmin(permissions.BasePermission):
@@ -49,8 +58,11 @@ class IsOwnerOrAdmin(permissions.BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
+        """Проверка прав на уровне объекта."""
+
         if request.user.is_admin_user:
             return True
+
         if hasattr(obj, "owner"):
             return obj.owner == request.user
         if hasattr(obj, "course"):
@@ -67,8 +79,8 @@ class IsStudentOrReadOnly(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
+        """Проверка прав на уровне запроса."""
+
         if request.method in permissions.SAFE_METHODS:
             return request.user.is_authenticated
-        return request.user.is_authenticated and (
-                request.user.is_teacher or request.user.is_admin_user
-        )
+        return request.user.is_authenticated and (request.user.is_teacher or request.user.is_admin_user)

@@ -5,6 +5,8 @@ from users.models import User
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
+    """Настройка отображения модели User в админке."""
+
     list_display = (
         "id",
         "email",

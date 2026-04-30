@@ -1,5 +1,5 @@
 from django.contrib import admin
-from materials.models import Course, Section, Lesson
+from materials.models import Course, Section, Lesson, Test, TestAttempt
 
 
 @admin.register(Course)
@@ -39,3 +39,22 @@ class LessonAdmin(admin.ModelAdmin):
     )
     list_filter = ("section", "created_at", "owner")
     search_fields = ("title_lesson", "section", "owner")
+
+
+@admin.register(Test)
+class TestAdmin(admin.ModelAdmin):
+    """Админка для модели Test."""
+
+    list_display = ("id", "lesson", "question", "correct_answer")
+    list_filter = ("lesson__section__course",)
+    search_fields = ("question", "lesson__title_lesson")
+
+
+@admin.register(TestAttempt)
+class TestAttemptAdmin(admin.ModelAdmin):
+    """Админка для модели TestAttempt."""
+
+    list_display = ("id", "student", "test", "user_answer", "is_correct", "created_at")
+    list_filter = ("is_correct", "created_at", "test__lesson__section__course")
+    search_fields = ("student__email", "user_answer")
+    readonly_fields = ("created_at",)

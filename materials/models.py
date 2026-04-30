@@ -1,9 +1,11 @@
 from django.core.validators import FileExtensionValidator
 from django.db import models
 
+from config import settings
+
 
 class Course(models.Model):
-    """Модель курса"""
+    """Модель курса."""
 
     title_course = models.CharField(
         max_length=250,
@@ -18,9 +20,7 @@ class Course(models.Model):
         null=True,
         validators=[FileExtensionValidator(["jpg", "jpeg", "png", "gif"])],
     )
-    description = models.TextField(
-        verbose_name="Описание курса", help_text="Введите подробное описание курса"
-    )
+    description = models.TextField(verbose_name="Описание курса", help_text="Введите подробное описание курса")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     is_published = models.BooleanField(
         default=False,
@@ -47,15 +47,11 @@ class Course(models.Model):
 
 
 class Section(models.Model):
-    """Модель для раздела курса"""
-    course = models.ForeignKey(
-        Course,
-        on_delete=models.CASCADE,
-        related_name="sections",
-        verbose_name="Курс"
-    )
+    """Модель для раздела курса."""
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections", verbose_name="Курс")
     title_section = models.CharField(max_length=200, verbose_name="Название раздела")
-    order = models.PositiveIntegerField(default=0, verbose_name="Порядок")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядковый номер раздела")
 
     class Meta:
         verbose_name = "Раздел"
@@ -63,11 +59,13 @@ class Section(models.Model):
         ordering = ["order"]
 
     def __str__(self):
+        """Строковое представление раздела."""
+
         return f"{self.course.title_course} — {self.title_section}"
 
 
 class Lesson(models.Model):
-    """Модель урока"""
+    """Модель урока."""
 
     section = models.ForeignKey(
         Section,
@@ -94,12 +92,10 @@ class Lesson(models.Model):
         null=True,
         validators=[FileExtensionValidator(["jpg", "jpeg", "png", "gif"])],
     )
-    video_url = models.URLField(
-        verbose_name="Ссылка на видео", help_text="Вставьте ссылку на видео", blank=True
-    )
+    video_url = models.URLField(verbose_name="Ссылка на видео", help_text="Вставьте ссылку на видео", blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
 
-    order = models.PositiveIntegerField(default=0, verbose_name="Порядок урока")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядковый номер урока")
 
     owner = models.ForeignKey(
         "users.User",
@@ -117,5 +113,53 @@ class Lesson(models.Model):
         ordering = ["order", "created_at"]
 
     def __str__(self):
+        """Строковое представление урока."""
+
         return f"{self.section.title_section} - {self.title_lesson}"
 
+
+class Test(models.Model):
+    """Модель теста для урока."""
+
+    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name="test", verbose_name="Урок")
+    question = models.TextField(verbose_name="Вопрос")
+    correct_answer = models.CharField(max_length=800, verbose_name="Правильный ответ")
+
+    class Meta:
+        verbose_name = "Тест"
+        verbose_name_plural = "Тесты"
+
+    def __str__(self):
+        """Строковое представление теста."""
+
+        return f"Тест: {self.lesson.title_lesson}"
+
+
+class TestAttempt(models.Model):
+    """Модель для попытки прохождения теста."""
+
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="test_attempts", verbose_name="Студент"
+    )
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="attempts", verbose_name="Тест")
+    user_answer = models.CharField(max_length=800, verbose_name="Ответ студента")
+    is_correct = models.BooleanField(default=False, verbose_name="Правильно?")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата")
+
+    def save(self, *args, **kwargs):
+        """При сохранении автоматически проверяем ответ."""
+
+        user_ans = self.user_answer.strip().lower()
+        correct_ans = self.test.correct_answer.strip().lower()
+        self.is_correct = user_ans == correct_ans
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Попытка теста"
+        verbose_name_plural = "Попытки тестов"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        """Строковое представление попытки теста."""
+
+        return f"{self.student.email} — {self.test.lesson.title_lesson} — {'✅' if self.is_correct else '❌'}"
