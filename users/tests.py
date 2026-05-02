@@ -1,3 +1,6 @@
+from unittest import TestCase
+
+from django.core.management import call_command
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -79,3 +82,27 @@ class UserRegistrationTests(APITestCase):
         self.assertEqual(self.user.first_name, "Updated")
         self.assertEqual(self.user.last_name, "User")
         self.assertEqual(self.user.country, "Russia")
+
+
+class CSUCommandTest(TestCase):
+    """Тесты для команды создания админа."""
+
+    def test_csu_creates_admin(self):
+        """Команда создаёт админа."""
+
+        call_command("csu")
+
+        # Проверяем, что админ появился в базе
+        admin = User.objects.get(email="admin@example.com")
+        self.assertEqual(admin.email, "admin@example.com")
+        self.assertTrue(admin.is_superuser)
+
+    def test_csu_does_not_create_duplicate(self):
+        """Повторный запуск не создаёт второго админа."""
+
+        call_command("csu")
+        call_command("csu")
+
+        # Должен быть только один админ
+        count = User.objects.filter(email="admin@example.com").count()
+        self.assertEqual(count, 1)
