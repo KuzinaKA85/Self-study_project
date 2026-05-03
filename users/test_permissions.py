@@ -40,40 +40,40 @@ class PermissionsTest(TestCase):
 
     # IsTeacher
     def test_teacher_has_teacher_rights(self):
-        """Учитель имеет права учителя."""
+        """Тест: Учитель имеет права учителя."""
 
         request = self._make_request(self.teacher)
         self.assertTrue(IsTeacher().has_permission(request, None))
 
     def test_student_has_not_teacher_rights(self):
-        """Студент не имеет прав учителя."""
+        """Тест: Студент не имеет прав учителя."""
 
         request = self._make_request(self.student)
         self.assertFalse(IsTeacher().has_permission(request, None))
 
     # IsAdmin
     def test_admin_has_admin_rights(self):
-        """Админ имеет права админа."""
+        """Тест: Админ имеет права админа."""
 
         request = self._make_request(self.admin)
         self.assertTrue(IsAdmin().has_permission(request, None))
 
     def test_teacher_has_not_admin_rights(self):
-        """Учитель не имеет прав админа."""
+        """Тест: Учитель не имеет прав админа."""
 
         request = self._make_request(self.teacher)
         self.assertFalse(IsAdmin().has_permission(request, None))
 
     # IsOwner
     def test_owner_can_edit(self):
-        """Владелец может редактировать свой курс."""
+        """Тест: Владелец может редактировать свой курс."""
 
         request = self._make_request(self.teacher)
         perm = IsOwner()
         self.assertTrue(perm.has_object_permission(request, None, self.course))
 
     def test_other_cannot_edit(self):
-        """Другой не может редактировать чужой курс."""
+        """Тест: Другой не может редактировать чужой курс."""
 
         request = self._make_request(self.student)
         perm = IsOwner()
@@ -81,28 +81,28 @@ class PermissionsTest(TestCase):
 
     # IsOwnerOrAdmin
     def test_admin_can_edit_any(self):
-        """Админ может редактировать любой курс."""
+        """Тест: Админ может редактировать любой курс."""
 
         request = self._make_request(self.admin)
         perm = IsOwnerOrAdmin()
         self.assertTrue(perm.has_object_permission(request, None, self.course))
 
     def test_owner_can_edit_own(self):
-        """Владелец может редактировать свой курс."""
+        """Тест: Владелец может редактировать свой курс."""
 
         request = self._make_request(self.teacher)
         perm = IsOwnerOrAdmin()
         self.assertTrue(perm.has_object_permission(request, None, self.course))
 
     def test_other_cannot_edit_foreign(self):
-        """Другой пользователь (не владелец/не админ) не может редактировать чужой курс."""
+        """Тест: Другой пользователь (не владелец/не админ) не может редактировать чужой курс."""
 
         request = self._make_request(self.student)
         perm = IsOwnerOrAdmin()
         self.assertFalse(perm.has_object_permission(request, None, self.course))
 
     def test_student_can_read_only(self):
-        """Студент может только читать (GET), но не писать (POST)."""
+        """Тест: Студент может только читать (GET), но не писать (POST)."""
 
         # GET запрос - студент может читать
         get_request = self.factory.get("/")

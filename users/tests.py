@@ -88,7 +88,7 @@ class CSUCommandTest(TestCase):
     """Тесты для команды создания админа."""
 
     def test_csu_creates_admin(self):
-        """Команда создаёт админа."""
+        """Тест: Команда создаёт админа."""
 
         call_command("csu")
 
@@ -98,7 +98,7 @@ class CSUCommandTest(TestCase):
         self.assertTrue(admin.is_superuser)
 
     def test_csu_does_not_create_duplicate(self):
-        """Повторный запуск не создаёт второго админа."""
+        """Тест: Повторный запуск не создаёт второго админа."""
 
         call_command("csu")
         call_command("csu")
