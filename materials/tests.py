@@ -365,3 +365,107 @@ class TestAttemptModelTest(TestCase):
         attempt = TestAttempt.objects.create(student=self.student, test=self.test, user_answer="  ПРАВИЛЬНЫЙ ОТВЕТ  ")
 
         self.assertTrue(attempt.is_correct)
+
+
+class TestCRUDAPITestCase(APITestCase):
+    """Тесты для CRUD операций с тестами."""
+
+    def setUp(self):
+        # Учитель (владелец)
+        self.teacher = User.objects.create(email="teacher@test.com", password="123", role="teacher")
+
+        # Другой учитель (не владелец)
+        self.other = User.objects.create(email="other@test.com", password="123", role="teacher")
+
+        # Админ
+        self.admin = User.objects.create(email="admin@test.com", password="123", role="admin")
+        self.admin.is_staff = True
+        self.admin.is_superuser = True
+        self.admin.save()
+
+        # Курс и урок
+        self.course = Course.objects.create(title_course="География", description="Описание", owner=self.teacher)
+        self.section = Section.objects.create(title_section="Страны мира", course=self.course)
+        self.lesson = Lesson.objects.create(
+            title_lesson="Столицы", description="Описание", section=self.section, owner=self.teacher
+        )
+
+        # Второй урок для теста списка
+        self.lesson2 = Lesson.objects.create(
+            title_lesson="Реки", description="Описание", section=self.section, owner=self.teacher
+        )
+
+    def test_owner_can_create_test(self):
+        """Владелец может создать тест."""
+
+        self.client.force_authenticate(user=self.teacher)
+        response = self.client.post(
+            "/materials/tests/", {"lesson": self.lesson.id, "question": "Столица Франции?", "correct_answer": "Париж"}
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_admin_can_create_test(self):
+        """Админ может создать тест."""
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(
+            "/materials/tests/", {"lesson": self.lesson.id, "question": "Вопрос", "correct_answer": "Ответ"}
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_other_cannot_create_test(self):
+        """Другой учитель не может создать тест."""
+
+        self.client.force_authenticate(user=self.other)
+        response = self.client.post(
+            "/materials/tests/", {"lesson": self.lesson.id, "question": "Вопрос", "correct_answer": "Ответ"}
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_update_test(self):
+        """Владелец может обновить тест."""
+
+        test = Test.objects.create(lesson=self.lesson, question="Старый", correct_answer="Ответ")
+        self.client.force_authenticate(user=self.teacher)
+        response = self.client.patch(f"/materials/tests/{test.id}/", {"question": "Новый"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_admin_can_update_test(self):
+        """Админ может обновить тест."""
+
+        test = Test.objects.create(lesson=self.lesson, question="Старый", correct_answer="Ответ")
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.patch(f"/materials/tests/{test.id}/", {"question": "Новый от админа"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_other_cannot_update_test(self):
+        """Другой учитель не может обновить тест."""
+
+        test = Test.objects.create(lesson=self.lesson, question="Старый", correct_answer="Ответ")
+        self.client.force_authenticate(user=self.other)
+        response = self.client.patch(f"/materials/tests/{test.id}/", {"question": "Новый"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_delete_test(self):
+        """Владелец может удалить тест."""
+
+        test = Test.objects.create(lesson=self.lesson, question="Вопрос", correct_answer="Ответ")
+        self.client.force_authenticate(user=self.teacher)
+        response = self.client.delete(f"/materials/tests/{test.id}/")
+        self.assertEqual(response.status_code, 204)
+
+    def test_admin_can_delete_test(self):
+        """Админ может удалить тест."""
+
+        test = Test.objects.create(lesson=self.lesson, question="Вопрос", correct_answer="Ответ")
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.delete(f"/materials/tests/{test.id}/")
+        self.assertEqual(response.status_code, 204)
+
+    def test_other_cannot_delete_test(self):
+        """Другой учитель не может удалить тест."""
+
+        test = Test.objects.create(lesson=self.lesson, question="Вопрос", correct_answer="Ответ")
+        self.client.force_authenticate(user=self.other)
+        response = self.client.delete(f"/materials/tests/{test.id}/")
+        self.assertEqual(response.status_code, 403)

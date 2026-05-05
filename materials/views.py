@@ -1,11 +1,12 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Course, Section, Lesson, TestAttempt
-from .serializers import CourseSerializer, SectionSerializer, LessonSerializer
+from .models import Course, Section, Lesson, TestAttempt, Test
+from .serializers import CourseSerializer, SectionSerializer, LessonSerializer, TestSerializer
 
 from users.permissions import IsTeacher, IsOwner, IsOwnerOrAdmin, IsStudentOrReadOnly
 
@@ -62,12 +63,6 @@ class SectionCreateAPIView(generics.CreateAPIView):
     """Создание раздела (только для преподавателей).
     Эндпоинт:
         POST /materials/sections/create/
-     Тело запроса:
-        {
-            "course": 1,
-            "title_section": "Название раздела",
-            "order": 1
-        }
     """
 
     serializer_class = SectionSerializer
@@ -160,14 +155,6 @@ class LessonCreateAPIView(generics.CreateAPIView):
     """Создание урока (только для преподавателей).
     Эндпоинт:
         POST /materials/lessons/create/
-    Тело запроса:
-        {
-            "section": 1,
-            "title_lesson": "Название урока",
-            "description": "Описание",
-            "video_url": "https://...",
-            "order": 1
-        }
     """
 
     serializer_class = LessonSerializer
@@ -207,6 +194,48 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
 
     queryset = Lesson.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsOwner]
+
+
+class TestViewSet(ModelViewSet):
+    """ViewSet для управления тестами.
+    Эндпоинты:
+        GET    /materials/tests/           - список всех тестов
+        POST   /materials/tests/           - создание теста
+        GET    /materials/tests/{id}/      - просмотр теста
+        PUT    /materials/tests/{id}/      - полное обновление теста
+        PATCH  /materials/tests/{id}/      - частичное обновление теста
+        DELETE /materials/tests/{id}/      - удаление теста
+
+    Права доступа:
+        - Все действия (создание, редактирование, удаление):
+          только владелец курса ИЛИ администратор (IsOwnerOrAdmin)
+        - Просмотр: все авторизованные пользователи
+    """
+
+    queryset = Test.objects.all()
+    serializer_class = TestSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['lesson']
+
+    def get_permissions(self):
+        """Назначение прав доступа в зависимости от действия."""
+
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [permissions.IsAuthenticated(), IsOwnerOrAdmin()]
+        return [permissions.IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        """При создании проверяем, что пользователь — владелец урока."""
+
+        lesson_id = self.request.data.get("lesson")
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+
+        if lesson.owner != self.request.user and not self.request.user.is_admin_user:
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied("Вы не являетесь владельцем этого урока")
+
+        serializer.save()
 
 
 class CheckTestAPIView(APIView):

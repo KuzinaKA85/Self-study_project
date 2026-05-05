@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Section, Lesson
+from .models import Course, Section, Lesson, Test
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -32,3 +32,15 @@ class LessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = "__all__"
         read_only_fields = ["owner", "created_at"]
+
+
+class TestSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Test."""
+
+    lesson_title = serializers.ReadOnlyField(source="lesson.title_lesson")
+    section_title = serializers.ReadOnlyField(source="lesson.section.title_section")
+    course_title = serializers.ReadOnlyField(source="lesson.section.course.title_course")
+
+    class Meta:
+        model = Test
+        fields = "__all__"

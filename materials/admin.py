@@ -13,6 +13,13 @@ class CourseAdmin(admin.ModelAdmin):
         "owner",
     )
     search_fields = ("title_course", "owner__email")
+    ordering = ("-created_at",)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(owner=request.user)
 
 
 @admin.register(Section)
@@ -24,6 +31,10 @@ class SectionAdmin(admin.ModelAdmin):
         "order",
     )
     search_fields = ("title_section", "course__title_course")
+    ordering = (
+        "course",
+        "order",
+    )
 
 
 @admin.register(Lesson)
@@ -39,6 +50,7 @@ class LessonAdmin(admin.ModelAdmin):
     )
     list_filter = ("section", "created_at", "owner")
     search_fields = ("title_lesson", "section", "owner")
+    ordering = ("section", "order")
 
 
 @admin.register(Test)

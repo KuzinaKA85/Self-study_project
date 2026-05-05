@@ -162,5 +162,7 @@ class TestAttempt(models.Model):
     def __str__(self):
         """Строковое представление попытки теста."""
 
-        return (f"{self.student.email} — {self.test.lesson.title_lesson} — "
-                f"{'Правильно!' if self.is_correct else 'Неправильно!'}")
+        return (
+            f"{self.student.email} — {self.test.lesson.title_lesson} — "
+            f"{'Правильно!' if self.is_correct else 'Неправильно!'}"
+        )

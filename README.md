@@ -116,39 +116,50 @@ python manage.py runserver
 ## API Эндпоинты
 
 ### 1. Пользователи
-| Метод | URL | Описание |
-|-------|-----|----------|
-| POST | `/users/register/` | Регистрация студента |
-| POST | `/users/login/` | Вход (JWT токен) |
-| POST | `/users/token/refresh/` | Обновление токена |
-| GET/PUT | `/users/profile/` | Профиль текущего пользователя |
-| GET/POST/PUT/DELETE | `/users/users/` | Управление пользователями (только админ) |
+
+| Метод               | URL                     | Описание                                 |
+|---------------------|-------------------------|------------------------------------------|
+| POST                | `/users/register/`      | Регистрация студента                     |
+| POST                | `/users/login/`         | Вход (JWT токен)                         |
+| POST                | `/users/token/refresh/` | Обновление токена                        |
+| GET/PUT             | `/users/profile/`       | Профиль текущего пользователя            |
+| GET/POST/PUT/DELETE | `/users/users/`         | Управление пользователями (только админ) |
 
 ### 2. Материалы
 
-| Метод | URL | Описание |
-|-------|-----|----------|
-| GET/POST | `/materials/courses/` | Список/создание курсов |
-| GET/PUT/DELETE | `/materials/courses/{id}/` | Детали/обновление/удаление курса |
-| GET | `/materials/sections/` | Список разделов (фильтр по курсу) |
-| POST | `/materials/sections/create/` | Создание раздела |
-| GET/PATCH | `/materials/sections/update/{id}/` | Обновление раздела |
-| DELETE | `/materials/sections/delete/{id}/` | Удаление раздела |
-| GET | `/materials/lessons/` | Список уроков (фильтр по разделу) |
-| POST | `/materials/lessons/create/` | Создание урока |
-| GET/PATCH | `/materials/lessons/update/{id}/` | Обновление урока |
-| DELETE | `/materials/lessons/delete/{id}/` | Удаление урока |
-| POST | `/materials/check-test/` | Проверка ответа на тест |
+| Метод          | URL                                | Описание                          |
+|----------------|------------------------------------|-----------------------------------|
+| GET/POST       | `/materials/courses/`              | Список/создание курсов            |
+| GET/PUT/DELETE | `/materials/courses/{id}/`         | Детали/обновление/удаление курса  |
+| GET            | `/materials/sections/`             | Список разделов (фильтр по курсу) |
+| POST           | `/materials/sections/create/`      | Создание раздела                  |
+| GET/PATCH      | `/materials/sections/update/{id}/` | Обновление раздела                |
+| DELETE         | `/materials/sections/delete/{id}/` | Удаление раздела                  |
+| GET            | `/materials/lessons/`              | Список уроков (фильтр по разделу) |
+| POST           | `/materials/lessons/create/`       | Создание урока                    |
+| GET/PATCH      | `/materials/lessons/update/{id}/`  | Обновление урока                  |
+| DELETE         | `/materials/lessons/delete/{id}/`  | Удаление урока                    |
 
-### 3. Документация
+### 3. Тесты
 
-| URL | Описание |
-|-----|----------|
+| Метод     | URL                      | Описание                |
+|-----------|--------------------------|-------------------------|
+| GET       | `/materials/tests/`      | Список всех тестов      |
+| POST      | `/materials/tests/`      | Создание теста          |
+| GET       | `/materials/tests/{id}/` | Просмотр теста          |
+| PUT/PATCH | `/materials/tests/{id}/` | Обновление теста        |
+| DELETE    | `/materials/tests/{id}/` | Удаление теста          |
+| POST      | `/materials/check-test/` | Проверка ответа на тест |
+
+### 4. Документация
+
+| URL         | Описание                                |
+|-------------|-----------------------------------------|
 | `/swagger/` | Swagger UI (интерактивная документация) |
-| `/redoc/` | ReDoc документация |
-| `/admin/` | Админ-панель Django |
+| `/redoc/`   | ReDoc документация                      |
+| `/admin/`   | Админ-панель Django                     |
 
-### 4. Тестирование
+### 5. Тестирование
 
 - Запуск всех тестов
 ```bash
@@ -166,7 +177,7 @@ coverage html
 start htmlcov/index.html   # Windows
 open htmlcov/index.html    # macOS
 ```
-### 5. Права доступа
+### 6. Права доступа
 
 | Роль          | Что может                                                               |
 |---------------|-------------------------------------------------------------------------|
@@ -174,7 +185,7 @@ open htmlcov/index.html    # macOS
 | Преподаватель | Создание/редактирование/удаление своих курсов, разделов, уроков, тестов |
 | Администратор | Полный доступ ко всем функциям, управление пользователями               |
 
-### 6. CORS
+### 7. CORS
 Для работы с отдельным фронтендом настроен CORS:
 ```
 # settings.py

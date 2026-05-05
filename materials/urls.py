@@ -14,12 +14,14 @@ from .views import (
     LessonDestroyAPIView,
     SectionRetrieveAPIView,
     CheckTestAPIView,
+    TestViewSet,
 )
 
 app_name = "materials"
 
 router = DefaultRouter()
 router.register(r"courses", CourseViewSet)
+router.register(r"tests", TestViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),

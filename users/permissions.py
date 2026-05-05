@@ -63,6 +63,8 @@ class IsOwnerOrAdmin(permissions.BasePermission):
         if request.user.is_admin_user:
             return True
 
+        if hasattr(obj, "lesson"):
+            return obj.lesson.owner == request.user
         if hasattr(obj, "owner"):
             return obj.owner == request.user
         if hasattr(obj, "course"):
