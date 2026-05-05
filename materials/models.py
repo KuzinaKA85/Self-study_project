@@ -121,7 +121,7 @@ class Lesson(models.Model):
 class Test(models.Model):
     """Модель теста для урока."""
 
-    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name="test", verbose_name="Урок")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="tests", verbose_name="Урок")
     question = models.TextField(verbose_name="Вопрос")
     correct_answer = models.CharField(max_length=800, verbose_name="Правильный ответ")
 

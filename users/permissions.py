@@ -33,6 +33,7 @@ class IsOwner(permissions.BasePermission):
 
     def _get_owner(self, obj):
         """Рекурсивно получаем владельца объекта."""
+
         if hasattr(obj, "owner"):
             return obj.owner
         if hasattr(obj, "course"):

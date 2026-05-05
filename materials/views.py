@@ -1,14 +1,15 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, permissions
 from django.shortcuts import get_object_or_404
+
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from .models import Course, Section, Lesson, TestAttempt, Test
-from .serializers import CourseSerializer, SectionSerializer, LessonSerializer, TestSerializer
+from users.permissions import IsOwner, IsOwnerOrAdmin, IsStudentOrReadOnly, IsTeacher
 
-from users.permissions import IsTeacher, IsOwner, IsOwnerOrAdmin, IsStudentOrReadOnly
+from .models import Course, Lesson, Section, Test, TestAttempt
+from .serializers import CourseSerializer, LessonSerializer, SectionSerializer, TestSerializer
 
 
 class CourseViewSet(ModelViewSet):
@@ -51,7 +52,7 @@ class SectionListAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        """Фильтрация разделов по параметру course в query string."""
+        """Фильтрация разделов по параметру course."""
 
         course_id = self.request.query_params.get("course")
         if course_id:
@@ -132,7 +133,7 @@ class LessonListAPIView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        """Фильтрует уроки по параметру section из query string."""
+        """Фильтрует уроки по параметру section."""
 
         section_id = self.request.query_params.get("section")
         if section_id:
@@ -205,17 +206,12 @@ class TestViewSet(ModelViewSet):
         PUT    /materials/tests/{id}/      - полное обновление теста
         PATCH  /materials/tests/{id}/      - частичное обновление теста
         DELETE /materials/tests/{id}/      - удаление теста
-
-    Права доступа:
-        - Все действия (создание, редактирование, удаление):
-          только владелец курса ИЛИ администратор (IsOwnerOrAdmin)
-        - Просмотр: все авторизованные пользователи
     """
 
     queryset = Test.objects.all()
     serializer_class = TestSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['lesson']
+    filterset_fields = ["lesson"]
 
     def get_permissions(self):
         """Назначение прав доступа в зависимости от действия."""
@@ -243,11 +239,6 @@ class CheckTestAPIView(APIView):
     Проверка ответа на тест (отдельный запрос).
     Эндпоинт:
         POST /materials/check-test/
-        Тело запроса:
-        {
-            "lesson_id": 1,
-            "answer": "ответ студента"
-        }
     """
 
     permission_classes = [permissions.IsAuthenticated]
@@ -256,26 +247,31 @@ class CheckTestAPIView(APIView):
         """Обрабатывает POST-запрос на проверку ответа."""
 
         # Берем данные из запроса
-        lesson_id = request.data.get("lesson_id")
+        test_id = request.data.get("test_id")
         user_answer = request.data.get("answer", "").strip()
 
-        # Проверяем, существует ли урок
+        # Проверяем, существует ли тест
+        if not test_id:
+            return Response({"error": "Не указан test_id"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            lesson = Lesson.objects.get(id=lesson_id)
-        except Lesson.DoesNotExist:
-            return Response({"error": "Урок не найден"}, status=404)
-
-        # Проверяем, есть ли тест у урока
-        if not hasattr(lesson, "test"):
-            return Response({"error": "К уроку нет теста"}, status=404)
-
-        test = lesson.test
+            test = Test.objects.get(id=test_id)
+        except Test.DoesNotExist:
+            return Response({"error": "Тест не найден"}, status=status.HTTP_404_NOT_FOUND)
 
         # Сравниваем ответы (без учёта регистра и пробелов)
         is_correct = user_answer.lower() == test.correct_answer.strip().lower()
 
         # Сохраняем попытку
-        TestAttempt.objects.create(student=request.user, test=test, user_answer=user_answer, is_correct=is_correct)
+        TestAttempt.objects.create(
+            student=request.user,
+            test=test,
+            user_answer=user_answer,
+            is_correct=is_correct
+        )
 
         # Возвращаем результат
-        return Response({"correct": is_correct, "message": "Правильно!" if is_correct else "Неправильно"})
+        return Response({
+            "correct": is_correct,
+            "message": "Правильно!" if is_correct else "Неправильно"
+        })

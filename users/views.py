@@ -1,9 +1,9 @@
 from rest_framework import generics, permissions
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from users.permissions import IsAdmin
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 
 from users.models import User
+from users.permissions import IsAdmin
 from users.serializers import UserSerializer
 
 
@@ -26,7 +26,6 @@ class UserViewSet(ModelViewSet):
 class UserCreateAPIView(generics.CreateAPIView):
     """Регистрация нового пользователя (студента).
     POST /users/register/
-    Тело запроса: {"email": "user@test.ru", "password": "123456"}
     """
 
     serializer_class = UserSerializer

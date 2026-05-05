@@ -2,8 +2,10 @@ from unittest import TestCase
 
 from django.core.management import call_command
 from django.urls import reverse
+
 from rest_framework import status
 from rest_framework.test import APITestCase
+
 from users.models import User
 
 

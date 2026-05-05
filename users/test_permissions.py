@@ -1,8 +1,8 @@
-from django.test import TestCase
-from django.test import RequestFactory
-from users.models import User
-from users.permissions import IsTeacher, IsAdmin, IsOwner, IsOwnerOrAdmin, IsStudentOrReadOnly
+from django.test import RequestFactory, TestCase
+
 from materials.models import Course
+from users.models import User
+from users.permissions import IsAdmin, IsOwner, IsOwnerOrAdmin, IsStudentOrReadOnly, IsTeacher
 
 
 class PermissionsTest(TestCase):

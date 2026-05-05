@@ -44,7 +44,7 @@ SELF-STUDY Project — это платформа для онлайн-обуче�
     │   └── views.py
     ├── static/                # Статические файлы (разработка)
     ├── staticfiles/           # Статические файлы (собранные)
-    ├── users/
+    ├── users/                 # Приложение пользователей
     │   ├── management/
     │   │   └── commands/
     │   │       └── csu.py

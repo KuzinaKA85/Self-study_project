@@ -1,9 +1,12 @@
 from django.contrib import admin
-from materials.models import Course, Section, Lesson, Test, TestAttempt
+
+from materials.models import Course, Lesson, Section, Test, TestAttempt
 
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
+    """Админка для модели Course."""
+
     list_display = (
         "id",
         "title_course",
@@ -24,6 +27,8 @@ class CourseAdmin(admin.ModelAdmin):
 
 @admin.register(Section)
 class SectionAdmin(admin.ModelAdmin):
+    """Админка для модели Section."""
+
     list_display = (
         "id",
         "course",
@@ -39,6 +44,8 @@ class SectionAdmin(admin.ModelAdmin):
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
+    """Админка для модели Lesson."""
+
     list_display = (
         "id",
         "section",

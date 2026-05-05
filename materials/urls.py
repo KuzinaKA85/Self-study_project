@@ -1,19 +1,20 @@
-from django.urls import path, include
+from django.urls import include, path
+
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    CheckTestAPIView,
     CourseViewSet,
-    SectionListAPIView,
-    SectionCreateAPIView,
-    SectionUpdateAPIView,
-    SectionDestroyAPIView,
+    LessonCreateAPIView,
+    LessonDestroyAPIView,
     LessonListAPIView,
     LessonRetrieveAPIView,
-    LessonCreateAPIView,
     LessonUpdateAPIView,
-    LessonDestroyAPIView,
+    SectionCreateAPIView,
+    SectionDestroyAPIView,
+    SectionListAPIView,
     SectionRetrieveAPIView,
-    CheckTestAPIView,
+    SectionUpdateAPIView,
     TestViewSet,
 )
 
