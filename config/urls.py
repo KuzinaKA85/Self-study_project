@@ -10,7 +10,7 @@ schema_view = get_schema_view(
     openapi.Info(
         title="SELF-STUDY API",
         default_version="v1",
-        description="API для управления образовательными материалами. Позволяет создавать курсы, разделы и уроки.",
+        description="API для управления образовательными материалами. Позволяет создавать курсы, разделы, уроки и тесты.",
         contact=openapi.Contact(email="kuzina_ka@example.com"),
     ),
     public=True,
