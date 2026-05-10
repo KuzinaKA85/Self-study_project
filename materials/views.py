@@ -31,7 +31,7 @@ class CourseViewSet(ModelViewSet):
         if self.action == "create":
             return [permissions.IsAuthenticated(), IsTeacher()]
         elif self.action == "destroy":
-            return [permissions.IsAuthenticated(), IsOwner()]
+            return [permissions.IsAuthenticated(), IsOwnerOrAdmin()]
         elif self.action in ["update", "partial_update"]:
             return [permissions.IsAuthenticated(), IsOwnerOrAdmin()]
         return [permissions.IsAuthenticated(), IsStudentOrReadOnly()]
@@ -194,7 +194,7 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     """
 
     queryset = Lesson.objects.all()
-    permission_classes = [permissions.IsAuthenticated, IsOwner]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrAdmin]
 
 
 class TestViewSet(ModelViewSet):
