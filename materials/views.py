@@ -1,12 +1,12 @@
 from django.shortcuts import get_object_or_404
 
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from users.permissions import IsOwner, IsOwnerOrAdmin, IsStudentOrReadOnly, IsTeacher
+from users.permissions import IsAdmin, IsOwnerOrAdmin, IsStudentOrReadOnly, IsTeacher
 
 from .models import Course, Lesson, Section, Test, TestAttempt
 from .serializers import CourseSerializer, LessonSerializer, SectionSerializer, TestSerializer
@@ -29,7 +29,7 @@ class CourseViewSet(ModelViewSet):
         """Назначение прав доступа в зависимости от действия."""
 
         if self.action == "create":
-            return [permissions.IsAuthenticated(), IsTeacher()]
+            return [permissions.IsAuthenticated(), IsTeacher(), IsAdmin()]
         elif self.action == "destroy":
             return [permissions.IsAuthenticated(), IsOwnerOrAdmin()]
         elif self.action in ["update", "partial_update"]:
@@ -61,13 +61,13 @@ class SectionListAPIView(generics.ListAPIView):
 
 
 class SectionCreateAPIView(generics.CreateAPIView):
-    """Создание раздела (только для преподавателей).
+    """Создание раздела (для преподавателей и администратора).
     Эндпоинт:
         POST /materials/sections/create/
     """
 
     serializer_class = SectionSerializer
-    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+    permission_classes = [permissions.IsAuthenticated, IsTeacher, IsAdmin]
 
     def perform_create(self, serializer):
         """Создаёт раздел с проверкой прав владельца курса."""
@@ -76,8 +76,6 @@ class SectionCreateAPIView(generics.CreateAPIView):
         course = get_object_or_404(Course, id=course_id)
 
         if course.owner != self.request.user and not self.request.user.is_admin_user:
-            from rest_framework.exceptions import PermissionDenied
-
             raise PermissionDenied("Вы не являетесь владельцем этого курса")
 
         serializer.save(course=course)
@@ -153,13 +151,13 @@ class LessonRetrieveAPIView(generics.RetrieveAPIView):
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
-    """Создание урока (только для преподавателей).
+    """Создание урока (для преподавателей и администратора).
     Эндпоинт:
         POST /materials/lessons/create/
     """
 
     serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+    permission_classes = [permissions.IsAuthenticated, IsTeacher, IsAdmin]
 
     def perform_create(self, serializer):
         """Создаёт урок с проверкой прав владельца курса."""
@@ -168,8 +166,6 @@ class LessonCreateAPIView(generics.CreateAPIView):
         section = get_object_or_404(Section, id=section_id)
 
         if section.course.owner != self.request.user and not self.request.user.is_admin_user:
-            from rest_framework.exceptions import PermissionDenied
-
             raise PermissionDenied("Вы не являетесь владельцем этого курса")
 
         serializer.save(owner=self.request.user, section=section)
@@ -210,7 +206,6 @@ class TestViewSet(ModelViewSet):
 
     queryset = Test.objects.all()
     serializer_class = TestSerializer
-    filter_backends = [DjangoFilterBackend]
     filterset_fields = ["lesson"]
 
     def get_permissions(self):
@@ -227,8 +222,6 @@ class TestViewSet(ModelViewSet):
         lesson = get_object_or_404(Lesson, id=lesson_id)
 
         if lesson.owner != self.request.user and not self.request.user.is_admin_user:
-            from rest_framework.exceptions import PermissionDenied
-
             raise PermissionDenied("Вы не являетесь владельцем этого урока")
 
         serializer.save()
@@ -263,15 +256,7 @@ class CheckTestAPIView(APIView):
         is_correct = user_answer.lower() == test.correct_answer.strip().lower()
 
         # Сохраняем попытку
-        TestAttempt.objects.create(
-            student=request.user,
-            test=test,
-            user_answer=user_answer,
-            is_correct=is_correct
-        )
+        TestAttempt.objects.create(student=request.user, test=test, user_answer=user_answer, is_correct=is_correct)
 
         # Возвращаем результат
-        return Response({
-            "correct": is_correct,
-            "message": "Правильно!" if is_correct else "Неправильно"
-        })
+        return Response({"correct": is_correct, "message": "Правильно!" if is_correct else "Неправильно"})
