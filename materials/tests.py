@@ -297,6 +297,7 @@ class TestAPITestCase(APITestCase):
         self.assertEqual(response.data["message"], "Неправильно")
 
         # Проверяем, что попытка сохранилась
+        self.assertEqual(TestAttempt.objects.count(), 1)
         attempt = TestAttempt.objects.first()
         self.assertFalse(attempt.is_correct)
 
