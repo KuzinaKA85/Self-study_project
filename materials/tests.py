@@ -274,7 +274,7 @@ class TestAPITestCase(APITestCase):
 
         self.client.force_authenticate(user=self.student)
 
-        response = self.client.post(self.check_url, {"lesson_id": self.lesson.id, "answer": "Москва"})
+        response = self.client.post(self.check_url, {"test_id": self.test.id, "answer": "Москва"})
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data["correct"])
@@ -290,7 +290,7 @@ class TestAPITestCase(APITestCase):
 
         self.client.force_authenticate(user=self.student)
 
-        response = self.client.post(self.check_url, {"lesson_id": self.lesson.id, "answer": "Санкт-петербург"})
+        response = self.client.post(self.check_url, {"test_id": self.test.id, "answer": "Санкт-петербург"})
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.data["correct"])
@@ -305,19 +305,19 @@ class TestAPITestCase(APITestCase):
 
         self.client.force_authenticate(user=None)
 
-        response = self.client.post(self.check_url, {"lesson_id": self.lesson.id, "answer": "Москва"})
+        response = self.client.post(self.check_url, {"test_id": self.test.id, "answer": "Москва"})
 
         self.assertEqual(response.status_code, 401)
 
-    def test_check_lesson_not_found(self):
-        """Тест: Урок не найден."""
+    def test_check_test_not_found(self):
+        """Тест: Тест не найден."""
 
         self.client.force_authenticate(user=self.student)
 
-        response = self.client.post(self.check_url, {"lesson_id": 999, "answer": "Москва"})
+        response = self.client.post(self.check_url, {"test_id": 999, "answer": "Москва"})
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data["error"], "Урок не найден")
+        self.assertEqual(response.data["error"], "Тест не найден")
 
     def test_check_lesson_without_test(self):
         """Тест: У урока нет теста."""
@@ -329,10 +329,10 @@ class TestAPITestCase(APITestCase):
 
         self.client.force_authenticate(user=self.student)
 
-        response = self.client.post(self.check_url, {"lesson_id": lesson_without_test.id, "answer": "Москва"})
+        response = self.client.post(self.check_url, {"test_id": lesson_without_test.id, "answer": "Москва"})
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data["error"], "К уроку нет теста")
+        self.assertEqual(response.data["error"], "Тест не найден")
 
 
 class TestAttemptModelTest(TestCase):

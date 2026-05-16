@@ -17,7 +17,7 @@ class UserRegistrationTests(APITestCase):
 
         self.register_url = reverse("users:register")
         self.login_url = reverse("users:login")
-        self.profile_url = "/users/profile/"
+        self.profile_url = reverse("users:profile")
 
         # Создаём тестового пользователя
         self.user_data = {

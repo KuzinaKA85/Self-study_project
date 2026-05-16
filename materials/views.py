@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from users.permissions import IsAdmin, IsOwnerOrAdmin, IsStudentOrReadOnly, IsTeacher
+from users.permissions import IsOwnerOrAdmin, IsStudentOrReadOnly, IsTeacher
 
 from .models import Course, Lesson, Section, Test, TestAttempt
 from .serializers import CourseSerializer, LessonSerializer, SectionSerializer, TestSerializer
@@ -29,7 +29,7 @@ class CourseViewSet(ModelViewSet):
         """Назначение прав доступа в зависимости от действия."""
 
         if self.action == "create":
-            return [permissions.IsAuthenticated(), IsTeacher(), IsAdmin()]
+            return [permissions.IsAuthenticated(), IsTeacher()]
         elif self.action == "destroy":
             return [permissions.IsAuthenticated(), IsOwnerOrAdmin()]
         elif self.action in ["update", "partial_update"]:
@@ -67,7 +67,7 @@ class SectionCreateAPIView(generics.CreateAPIView):
     """
 
     serializer_class = SectionSerializer
-    permission_classes = [permissions.IsAuthenticated, IsTeacher, IsAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def perform_create(self, serializer):
         """Создаёт раздел с проверкой прав владельца курса."""
@@ -157,7 +157,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
     """
 
     serializer_class = LessonSerializer
-    permission_classes = [permissions.IsAuthenticated, IsTeacher, IsAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
 
     def perform_create(self, serializer):
         """Создаёт урок с проверкой прав владельца курса."""
@@ -239,11 +239,9 @@ class CheckTestAPIView(APIView):
     def post(self, request, *args, **kwargs):
         """Обрабатывает POST-запрос на проверку ответа."""
 
-        # Берем данные из запроса
         test_id = request.data.get("test_id")
         user_answer = request.data.get("answer", "").strip()
 
-        # Проверяем, существует ли тест
         if not test_id:
             return Response({"error": "Не указан test_id"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -252,7 +250,6 @@ class CheckTestAPIView(APIView):
         except Test.DoesNotExist:
             return Response({"error": "Тест не найден"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Сравниваем ответы (без учёта регистра и пробелов)
         is_correct = user_answer.lower() == test.correct_answer.strip().lower()
 
         # Сохраняем попытку
