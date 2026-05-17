@@ -37,7 +37,7 @@ class CourseViewSet(ModelViewSet):
         return [permissions.IsAuthenticated(), IsStudentOrReadOnly()]
 
     def perform_create(self, serializer):
-        """При создании устанавливаем текущего пользователя как owner."""
+        """При создании курса устанавливаем текущего пользователя как owner."""
 
         serializer.save(owner=self.request.user)
 
