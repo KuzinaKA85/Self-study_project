@@ -206,3 +206,11 @@ database.ini
 
 reports/
 test_report.json
+
+# Статика (собранная)
+staticfiles/
+staticfiles_collected/
+collected_static/
+
+# Медиа (загруженные пользователями файлы)
+media/
